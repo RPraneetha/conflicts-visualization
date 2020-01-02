@@ -1,0 +1,24 @@
+/*TODO Convert into  variables and increase/decrease opacity for mouse-over functions*/
+.mapContainer{
+    background-color: #0A122A;
+}
+
+.country {
+    stroke: #20273d;
+    stroke-width: 0.5px;
+}
+.country:hover {
+    cursor: pointer;
+    stroke: #363d50;
+    stroke-width: 1.5px;
+}
+
+.marker {
+    fill: #ff9505;
+    stroke: #D17A05;
+}
+.marker:hover {
+    cursor: pointer;
+    stroke: #FFBB5F;
+    stroke-width: 1.5px;
+}

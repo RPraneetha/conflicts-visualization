@@ -10,16 +10,17 @@
 .country:hover {
     cursor: pointer;
     stroke: #363d50;
-    stroke-width: 1.5;
+    stroke-width: 1;
 }
 
 .marker {
     fill: #ff9505;
     fill-opacity: 0.7;
 }
+
 .marker:hover {
     cursor: pointer;
     fill-opacity: 1;
     stroke: #FFBB5F;
-    stroke-width: 0.8;
+    stroke-width: 0.9;
 }

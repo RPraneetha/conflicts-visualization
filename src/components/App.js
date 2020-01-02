@@ -1,19 +1,16 @@
-import React from 'react';
-import './App.css';
+import React, { useState } from 'react';
+import ReactTooltip from "react-tooltip";
 import WorldMap from "./world-map/WorldMap";
+import './App.css';
 
-class App extends React.Component {
-
-  componentDidMount() {
-
-  }
-
-  render() {
-      return (
-            <div className="App">
-                <WorldMap/>
-            </div>
-    );
-  }
+function App() {
+  const [content, setContent] = useState("");
+  console.log(content)
+  return (
+        <div className="App">
+            <WorldMap setTooltipContent={setContent}/>
+            <ReactTooltip>{content}</ReactTooltip>
+        </div>
+);
 }
 export default App;

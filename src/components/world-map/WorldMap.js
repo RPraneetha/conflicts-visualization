@@ -4,7 +4,8 @@ import { feature } from "topojson-client";
 import { ComposableMap, ZoomableGroup } from "react-simple-maps";
 import './WorldMap.css';
 
-const worldData = require("../../data/world-110m");
+const worldMapData = require("../../data/world-110m");
+const conflictData = require("../../data/data.json").data;
 
 const cities = [
     { name: "Tokyo",          coordinates: [139.6917,35.6895],  population: 37843000 },
@@ -39,16 +40,58 @@ const cities = [
     { name: "Lima",           coordinates: [-77.0428,-12.0464], population: 10750000 },
 ];
 
+/* Schema
+{
+    "monthYear": 201402,
+    "protestDetails": {
+      "CameoCode": "141",
+      "ProtestType": "DEMONSTRATION OR RALLY",
+      "Cause": null
+    },
+    "quadClass": {
+      "id": 3,
+      "name": " Verbal Conflict"
+    },
+    "impact": -6.5,
+    "location": {
+      "locType": 4,
+      "fullName": "Beijing, Beijing, China",
+      "city": "Beijing",
+      "state": " Beijing",
+      "country": " China",
+      "countryCode": "CH",
+      "adm1Code": "CH22",
+      "adm2Code": "13001",
+      "lat": 39.92890167236328,
+      "lng": 116.38800048828125,
+      "featureId": "-1898541"
+    }
+  }
+ */
 const projection = geoEqualEarth()
     .scale(160)
-    .translate([ 800 / 2, 450 / 2 ]);
+    .translate([ 800 / 2, 450 / 2 ]); //Height and width
 //Cite and justify
 
 const WorldMap = () => {
-    const [geographies, setGeographies] = useState([]);
+    const [ geographies, setGeographies] = useState([]);
+    // const [ conflictData, setConflictData ] = useState([]);
 
     useEffect(() => {
-        setGeographies(feature(worldData, worldData.objects.countries).features)
+        setGeographies(feature(worldMapData, worldMapData.objects.countries).features);
+        // setConflictData(conflictData);
+        // fetch("../../data/data.json")
+        //     .then(response => {
+        //         if (response.status !== 200) {
+        //             console.log(`There was a problem: ${response.status}`);
+        //             return
+        //         }
+        //         console.log(response.json())
+        //         response.json().then((conflictData) => {
+        //                 console.log(conflictData)
+        //                 // setConflictData(conflictData.data);
+        //         })
+        //     })
     }, []);
 
     const handleCountryClick = countryIndex => {
@@ -57,11 +100,12 @@ const WorldMap = () => {
     };
 
     const handleMarkerClick = i => {
-        console.log("Marker: ", cities[i])
+        console.log("Marker: ", conflictData[i].location.fullName)
     };
+
     //Include Greticule?
     return (
-        <ComposableMap className="mapContainer" >
+        <ComposableMap className="mapContainer">
             <ZoomableGroup zoom={1}>
                 <svg className="worldMap">
                     <g className="countries">
@@ -79,15 +123,15 @@ const WorldMap = () => {
                     </g>
                     <g className="markers">
                         {
-                            cities.map((city, i) => (
-                                <circle
-                                    key={ `marker-${i}` }
-                                    cx={ projection(city.coordinates)[0] }
-                                    cy={ projection(city.coordinates)[1] }
-                                    r={ city.population / 3000000 }
-                                    className="marker"
-                                    onClick={ () => handleMarkerClick(i) }
-                                />
+                            conflictData.map((conflictEvent, index) => (
+                                        <circle
+                                            key={ `marker-${index}` }
+                                            cx={ projection([conflictEvent.location.lng.toFixed(4), conflictEvent.location.lat.toFixed(4)])[0] }
+                                            cy={ projection([conflictEvent.location.lng.toFixed(4), conflictEvent.location.lat.toFixed(4)])[1] }
+                                            r={ conflictEvent.impact * -1 }
+                                            className="marker"
+                                            onClick={ () => handleMarkerClick(index) }
+                                        />
                             ))
                         }
                     </g>

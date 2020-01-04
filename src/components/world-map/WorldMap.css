@@ -24,3 +24,23 @@
     stroke: #FFBB5F;
     stroke-width: 0.9;
 }
+
+.source:link, .source:visited {
+    color: orangered;
+    -webkit-transition-duration: 0.4s;
+    transition-duration: 0.4s;
+    text-decoration: none;
+    cursor: pointer;
+    display: inline-block;
+}
+.source:hover, .source:active {
+    background-color: #485461;
+}
+
+.protestTooltip {
+    pointer-events: auto !important;
+}
+.protestTooltip:hover {
+    visibility: visible !important;
+    opacity: 1 !important;
+}

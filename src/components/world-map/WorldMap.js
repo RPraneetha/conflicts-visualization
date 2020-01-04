@@ -1,45 +1,27 @@
-import React, { memo, useState, useEffect } from "react";
+import React, { memo, useState, useEffect, Fragment } from "react";
 import { ComposableMap, Geographies, Geography, Marker, ZoomableGroup } from "react-simple-maps";
+import ReactTooltip from "react-tooltip";
 import './WorldMap.css';
 
-const conflictData = require("../../data/data.json").data;
-
-/* Schema
-{
-    "monthYear": 201402,
-    "protestDetails": {
-      "CameoCode": "141",
-      "ProtestType": "DEMONSTRATION OR RALLY",
-      "Cause": null
-    },
-    "quadClass": {
-      "id": 3,
-      "name": " Verbal Conflict"
-    },
-    "impact": -6.5,
-    "location": {
-      "locType": 4,
-      "fullName": "Beijing, Beijing, China",
-      "city": "Beijing",
-      "state": " Beijing",
-      "country": " China",
-      "countryCode": "CH",
-      "adm1Code": "CH22",
-      "adm2Code": "13001",
-      "lat": 39.92890167236328,
-      "lng": 116.38800048828125,
-      "featureId": "-1898541"
-    }
-  }
- */
+const conflictData = require("../../data/locations-2016.json").locations;
 
 const geoUrl =
     "https://raw.githubusercontent.com/zcreativelabs/react-simple-maps/master/topojson-maps/world-110m.json";
 
-const WorldMap = ({setTooltipContent}) => {
+const titleCase = string => {
+    return string.toLowerCase().split(' ').map(function(word) {
+        return word.replace(word[0], word[0].toUpperCase());
+    }).join(' ');
+};
+
+const WorldMap = () => {
     // const [ conflictData, setConflictData ] = useState([]);
+    const [countryContent, setCountryContent] = useState("");
+    const [conflictContent, setConflictContent] = useState("");
+    const [year, setYear] = useState("");
 
     useEffect(() => {
+        setYear(conflictData[0].year);
         // setConflictData(conflictData);
         // fetch("../../data/data.json")
         //     .then(response => {
@@ -64,42 +46,91 @@ const WorldMap = ({setTooltipContent}) => {
         console.log("Marker: ", conflictData[i].location.fullName)
     };
 
+    const countryProtests = countryName => {
+        return conflictData.filter(country =>
+            country.protestLocation.country && countryName.trim().includes(country.protestLocation.country.trim())
+        ).length;
+    };
+
     //Include Greticule?
     return (
-        <ComposableMap className="mapContainer">
-            <ZoomableGroup zoom={1}>
-                <svg className="worldMap">
-                    <Geographies className="countries" geography={geoUrl}>
-                        {({ geographies }) =>
-                            geographies.map((geo, i) =>
-                                <Geography
-                                    className="country"
-                                    key={geo.rsmKey}
-                                    geography={geo}
-                                    fill={ `rgba(255, 34, 12,${ 1 / geographies.length * i})` }
-                                    onClick={ () => handleCountryClick(geo, i) }
-                                />)
-                        }
-                    </Geographies>
-                    {conflictData.map((conflictEvent, index) => (
-                        <Marker className="markers" data-tip="" key={ `marker-${index}` }
-                                coordinates={[conflictEvent.location.lng.toFixed(4), conflictEvent.location.lat.toFixed(4)]}>
-                            <circle
-                                className="marker"
-                                r={5}
-                                onClick={ () => handleMarkerClick(index) }
+        <Fragment>
+            <ComposableMap data-tip={""} data-for="countryTooltip" className="mapContainer">
+                <ZoomableGroup zoom={1}>
+                    <svg className="worldMap">
+                        <Geographies className="countries" geography={geoUrl}>
+                            {({ geographies }) =>
+                                geographies.map((geo, i) =>
+                                    <Geography
+                                        className="country"
+                                        key={geo.rsmKey}
+                                        geography={geo}
+                                        fill={ `rgba(255, 34, 12,${ 1 / geographies.length * i})` }
+                                        onClick={ () => handleCountryClick(geo, i) }
+                                        onMouseEnter={() => {
+                                            let countryTooltip = (
+                                                <span className="countryTooltipBox">
+                                                    Protests in {geo.properties.NAME} in {year} : {countryProtests(geo.properties.NAME)}
+                                                </span>
+                                            );
+                                            setCountryContent(countryTooltip);
+                                        }}
+                                        onMouseLeave={() => {
+                                            setCountryContent(false);
+                                        }}
+                                    />
+                                )
+                            }
+                        </Geographies>
+                        {conflictData.map((conflictEvent, index) => (
+                            <Marker
+                                className="markers"
+                                coordinates={[
+                                    conflictEvent.protestLocation.lng.toFixed(4),
+                                    conflictEvent.protestLocation.lat.toFixed(4)
+                                ]}
+                                data-tip
+                                data-for="protestTooltip"
+                                key={ `marker-${index}` }
                                 onMouseEnter={() => {
-                                setTooltipContent("TEXT GOES HERE");
+                                    let conflictTooltip = (
+                                        <span className="conflictTooltipBox">
+                                            <b>Location:</b> {conflictEvent.protestLocation.city}{", "}{conflictEvent.protestLocation.country}<br />
+                                            <b>Date:</b> {new Date(conflictEvent.date).toDateString()}<br />
+                                            {conflictEvent.protestCause !== "Undefined" && (
+                                                <Fragment><b>Protest Cause:</b>{titleCase(conflictEvent.protestCause)}<br /></Fragment>)}
+                                            <b>Protest Type:</b> {titleCase(conflictEvent.protestType)}<br />
+                                            <b>Read more at:</b><br />
+                                            {conflictEvent.sources.map((source, index) =>
+                                                (<Fragment key={source.sourceUrl}>
+                                                    <a className="source" href={source.sourceUrl}>Source {index + 1}</a><br />
+                                                </Fragment>)
+                                            )}
+                                        </span>
+                                    );
+                                    setConflictContent(conflictTooltip);
                                 }}
-                                onMouseLeave={() => {
-                                setTooltipContent("");
-                                }}
-                            />
-                        </Marker>
-                    ))}
-                </svg>
-            </ZoomableGroup>
-        </ComposableMap>
+                                // onMouseLeave={() => {
+                                //     setConflictContent("");
+                                // }}
+                                    >
+                                <circle
+                                    className="marker"
+                                    r={5}
+                                    onClick={ () => handleMarkerClick(index) }
+                                />
+                            </Marker>
+                        ))}
+                    </svg>
+                </ZoomableGroup>
+            </ComposableMap>
+            {countryContent && (<ReactTooltip id="countryTooltip">
+                { countryContent }
+            </ReactTooltip>)}
+            {conflictContent && (<ReactTooltip id="protestTooltip" delayHide={200} className="protestTooltip" effect='solid'>
+                { conflictContent }
+            </ReactTooltip>)}
+        </Fragment>
     )
 };
 

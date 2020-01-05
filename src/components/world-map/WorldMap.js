@@ -1,11 +1,11 @@
 import React, { memo, useState, useEffect, Fragment } from "react";
 import { scaleLinear } from "d3-scale";
-import { ComposableMap, Geographies, Geography, Marker, Sphere, ZoomableGroup } from "react-simple-maps";
+import { ComposableMap, Geographies, Geography, Marker, ZoomableGroup } from "react-simple-maps";
 import ReactTooltip from "react-tooltip";
 import './WorldMap.css';
 
-const countryCount = require("../../data/countryCount2016.json");
-const conflictData = require("../../data/locations-2016-test.json").locations;
+const countryCount = require("../../data/countryCount2019.json");
+const conflictData = require("../../data/locations-2019.json").locations;
 
 const geoUrl =
     "https://raw.githubusercontent.com/zcreativelabs/react-simple-maps/master/topojson-maps/world-110m.json";
@@ -17,7 +17,7 @@ const titleCase = string => {
 };
 
 const colorScale = scaleLinear()
-    .domain([0, 53576]) // TODO Change to dynamic
+    .domain([0, 13311]) // TODO Change to dynamic
     .range(["#ffedea", "#ff5233"]);
 
 const WorldMap = () => {
@@ -60,6 +60,16 @@ const WorldMap = () => {
     const countryFill = countryName => {
         let country = Object.keys(countryCount).find((country => countryName.includes(country)));
         return country ? colorScale(countryCount[country]) : "#F5F4F6";
+    };
+
+    const bubbleSize = conflictEvent => {
+        return 5 + conflictData.filter(conflict => (
+            conflict.protestLocation && conflictEvent.protestLocation ? (
+                conflict.protestLocation.lat.toFixed(0) === conflictEvent.protestLocation.lat.toFixed(0) &&
+                conflict.protestLocation.lng.toFixed(0) === conflictEvent.protestLocation.lng.toFixed(0)
+            )
+                : 0
+        )).length/5
     };
 
     //Include Greticule?
@@ -126,7 +136,7 @@ const WorldMap = () => {
                                     >
                                 <circle
                                     className="marker"
-                                    r={5}
+                                    r={ bubbleSize(conflictEvent) }
                                     onClick={ () => handleMarkerClick(index) }
                                 />
                             </Marker>

@@ -1,9 +1,11 @@
 import React, { memo, useState, useEffect, Fragment } from "react";
-import { ComposableMap, Geographies, Geography, Marker, ZoomableGroup } from "react-simple-maps";
+import { scaleLinear } from "d3-scale";
+import { ComposableMap, Geographies, Geography, Marker, Sphere, ZoomableGroup } from "react-simple-maps";
 import ReactTooltip from "react-tooltip";
 import './WorldMap.css';
 
-const conflictData = require("../../data/locations-2016.json").locations;
+const countryCount = require("../../data/countryCount2016.json");
+const conflictData = require("../../data/locations-2016-test.json").locations;
 
 const geoUrl =
     "https://raw.githubusercontent.com/zcreativelabs/react-simple-maps/master/topojson-maps/world-110m.json";
@@ -13,6 +15,10 @@ const titleCase = string => {
         return word.replace(word[0], word[0].toUpperCase());
     }).join(' ');
 };
+
+const colorScale = scaleLinear()
+    .domain([0, 53576]) // TODO Change to dynamic
+    .range(["#ffedea", "#ff5233"]);
 
 const WorldMap = () => {
     // const [ conflictData, setConflictData ] = useState([]);
@@ -37,13 +43,12 @@ const WorldMap = () => {
         //     })
     }, []);
 
-    const handleCountryClick = (geographies, countryIndex) => {
-        //TODO Add ref to display content for country click and marker click
-        console.log("Clicked on country: ", geographies[countryIndex])
+    const handleCountryClick = (geographies) => {
+        console.log("Clicked on country: ", geographies.properties.NAME)
     };
 
     const handleMarkerClick = i => {
-        console.log("Marker: ", conflictData[i].location.fullName)
+        console.log("Marker: ", conflictData[i].protestLocation.city)
     };
 
     const countryProtests = countryName => {
@@ -52,10 +57,15 @@ const WorldMap = () => {
         ).length;
     };
 
+    const countryFill = countryName => {
+        let country = Object.keys(countryCount).find((country => countryName.includes(country)));
+        return country ? colorScale(countryCount[country]) : "#F5F4F6";
+    };
+
     //Include Greticule?
     return (
         <Fragment>
-            <ComposableMap data-tip={""} data-for="countryTooltip" className="mapContainer">
+            <ComposableMap data-tip={""} data-for="countryTooltip" className="mapContainer" width={1000} height={500}>
                 <ZoomableGroup zoom={1}>
                     <svg className="worldMap">
                         <Geographies className="countries" geography={geoUrl}>
@@ -65,12 +75,12 @@ const WorldMap = () => {
                                         className="country"
                                         key={geo.rsmKey}
                                         geography={geo}
-                                        fill={ `rgba(255, 34, 12,${ 1 / geographies.length * i})` }
+                                        fill={ countryFill(geo.properties.NAME) }
                                         onClick={ () => handleCountryClick(geo, i) }
                                         onMouseEnter={() => {
                                             let countryTooltip = (
                                                 <span className="countryTooltipBox">
-                                                    Protests in {geo.properties.NAME} in {year} : {countryProtests(geo.properties.NAME)}
+                                                    Protests in { geo.properties.NAME } in { year } : { countryProtests(geo.properties.NAME) }
                                                 </span>
                                             );
                                             setCountryContent(countryTooltip);

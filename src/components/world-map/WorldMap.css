@@ -1,8 +1,11 @@
 /*TODO Convert into  variables and increase/decrease opacity for mouse-over functions*/
 .mapContainer{
-    background-color: #0A122A;
+    padding: 10px;
 }
 
+.countries {
+    padding: 0;
+}
 .country {
     stroke: #20273d;
     stroke-width: 0.5;
@@ -43,4 +46,8 @@
 .protestTooltip:hover {
     visibility: visible !important;
     opacity: 1 !important;
+}
+
+path:focus {
+    outline: none;
 }

@@ -1,14 +1,20 @@
 import React, { memo, useState, useEffect, Fragment } from "react";
 import { scaleLinear } from "d3-scale";
 import { ComposableMap, Geographies, Geography, Marker, ZoomableGroup } from "react-simple-maps";
+// import { Spring, config } from "react-spring";
 import ReactTooltip from "react-tooltip";
+// import StateMap from "./StateMap";
 import './WorldMap.css';
+import {transform} from "topojson-client";
 
-const countryCount = require("../../data/countryCount2019.json");
-const conflictData = require("../../data/locations-2019.json").locations;
+const countryCount = require("../../data/countryCount-2016-test.json");
+const conflictData = require("../../data/locations-2016-test.json").locations;
 
-const geoUrl =
-    "https://raw.githubusercontent.com/zcreativelabs/react-simple-maps/master/topojson-maps/world-110m.json";
+// const indiaMap = "https://raw.githubusercontent.com/deldersveld/topojson/master/countries/india/india-states.json";
+const indiaMap = require("../../data/india-states");
+const stateMap = require("../../data/india-districts");
+    // "https://raw.githubusercontent.com/deldersveld/topojson/master/countries/india/india-districts.json";
+    // "https://raw.githubusercontent.com/zcreativelabs/react-simple-maps/master/topojson-maps/world-110m.json";
 
 const titleCase = string => {
     return string.toLowerCase().split(' ').map(function(word) {
@@ -25,6 +31,14 @@ const WorldMap = () => {
     const [countryContent, setCountryContent] = useState("");
     const [conflictContent, setConflictContent] = useState("");
     const [year, setYear] = useState("");
+    const [view, setView] = useState("country");
+    const [map, setMap] = useState(indiaMap);
+    const [states, setStates] = useState("");
+    const [transforms, setTransforms] = useState({scale: 800, center: [80,22], zoom: 1, width: 800});
+    // const [scale, setScale] = useState(800);
+    // const [center, setCenter] = useState([80,22]);
+    // const [zoom, setZoom] = useState(1);
+
 
     useEffect(() => {
         setYear(conflictData[0].year);
@@ -43,12 +57,22 @@ const WorldMap = () => {
         //     })
     }, []);
 
-    const handleCountryClick = (geographies) => {
-        console.log("Clicked on country: ", geographies.properties.NAME)
+    const handleStateClick = (geographies) => {
+        console.log("Clicked on country: ", geographies);
+        setStates(geographies.properties.NAME_1);
+        setMap(stateMap);
+        setView("state");
+        setTransforms({
+            scale: 2200, center: [78, 22], width: 1000,
+            // scale: 800,
+            // width: 800,
+            // center: [80,22],
+            // zoom: 6
+        });
     };
 
-    const handleMarkerClick = i => {
-        console.log("Marker: ", conflictData[i].protestLocation.city)
+    const handleMarkerClick = (conflictEvent, i) => {
+        console.log("Marker: ", conflictEvent)
     };
 
     const countryProtests = countryName => {
@@ -57,9 +81,9 @@ const WorldMap = () => {
         ).length;
     };
 
-    const countryFill = countryName => {
-        let country = Object.keys(countryCount).find((country => countryName.includes(country)));
-        return country ? colorScale(countryCount[country]) : "#F5F4F6";
+    const stateFill = stateName => {
+        let state = Object.keys(countryCount).find((state => stateName === state));
+        return state ? colorScale(countryCount[state]) : "#F5F4F6";
     };
 
     const bubbleSize = conflictEvent => {
@@ -75,34 +99,64 @@ const WorldMap = () => {
     //Include Greticule?
     return (
         <Fragment>
-            <ComposableMap data-tip={""} data-for="countryTooltip" className="mapContainer" width={1000} height={500}>
-                <ZoomableGroup zoom={1}>
+                <ComposableMap data-tip={""} data-for="countryTooltip" className="mapContainer"
+                               width={transforms.width}
+                           height={400}
+                           projection="geoAzimuthalEqualArea"
+                           projectionConfig={{
+                               rotate: [-70.0, -22.0, 0],
+                               scale: transforms.scale
+                           }}
+                >
+                <ZoomableGroup zoom={transforms.zoom} center={transforms.center}>
                     <svg className="worldMap">
-                        <Geographies className="countries" geography={geoUrl}>
-                            {({ geographies }) =>
-                                geographies.map((geo, i) =>
-                                    <Geography
-                                        className="country"
-                                        key={geo.rsmKey}
-                                        geography={geo}
-                                        fill={ countryFill(geo.properties.NAME) }
-                                        onClick={ () => handleCountryClick(geo, i) }
-                                        onMouseEnter={() => {
-                                            let countryTooltip = (
-                                                <span className="countryTooltipBox">
-                                                    Protests in { geo.properties.NAME } in { year } : { countryProtests(geo.properties.NAME) }
+                        {/*{view === "country" ?*/}
+                            (<Geographies className="countries" geography={map}>
+                                {({geographies}) =>
+                                    geographies
+                                        .filter((geography) => {
+                                            if(view === "state") {
+                                                return geography.properties.NAME_1 === states;
+                                            }
+                                            return true;
+                                        })
+                                        .map((geo, i) =>
+                                            <Geography
+                                                className="country"
+                                                key={geo.rsmKey}
+                                                geography={geo}
+                                                fill={stateFill(geo.properties.NAME_1)}
+                                                onClick={() => handleStateClick(geo, i)}
+                                                onMouseEnter={() => {
+                                                    let countryTooltip = (
+                                                        <span className="countryTooltipBox">
+                                                    Protests in {geo.properties.NAME_1} in {year} :
+                                                            {countryProtests(geo.properties.NAME_1)}
                                                 </span>
-                                            );
-                                            setCountryContent(countryTooltip);
-                                        }}
-                                        onMouseLeave={() => {
-                                            setCountryContent(false);
-                                        }}
-                                    />
-                                )
-                            }
-                        </Geographies>
-                        {conflictData.map((conflictEvent, index) => (
+                                                    );
+                                                    setCountryContent(countryTooltip);
+                                                }}
+                                                onMouseLeave={() => {
+                                                    setCountryContent(false);
+                                                }}
+                                            />
+                                        )
+                                }
+                            </Geographies>
+                            {/*// ):*/}
+                            {/*// (<StateMap stateName={states}/>)*/}
+                        }
+                        {conflictData
+                            .filter((conflictEvent) => {
+                                if(view === "country") {
+                                    return conflictEvent.protestLocation &&
+                                        conflictEvent.protestLocation.country === "India"
+                                } else {
+                                    return states === conflictEvent.protestLocation.state;
+                                }
+
+                            })
+                            .map((conflictEvent, index) => (
                             <Marker
                                 className="markers"
                                 coordinates={[
@@ -115,10 +169,12 @@ const WorldMap = () => {
                                 onMouseEnter={() => {
                                     let conflictTooltip = (
                                         <span className="conflictTooltipBox">
-                                            <b>Location:</b> {conflictEvent.protestLocation.city}{", "}{conflictEvent.protestLocation.country}<br />
+                                            <b>Location:</b> {conflictEvent.protestLocation.city}{", "}
+                                            {conflictEvent.protestLocation.country}<br />
                                             <b>Date:</b> {new Date(conflictEvent.date).toDateString()}<br />
                                             {conflictEvent.protestCause !== "Undefined" && (
-                                                <Fragment><b>Protest Cause:</b>{titleCase(conflictEvent.protestCause)}<br /></Fragment>)}
+                                                <Fragment><b>Protest Cause:</b>{titleCase(conflictEvent.protestCause)}
+                                                <br /></Fragment>)}
                                             <b>Protest Type:</b> {titleCase(conflictEvent.protestType)}<br />
                                             <b>Read more at:</b><br />
                                             {conflictEvent.sources.map((source, index) =>
@@ -137,17 +193,19 @@ const WorldMap = () => {
                                 <circle
                                     className="marker"
                                     r={ bubbleSize(conflictEvent) }
-                                    onClick={ () => handleMarkerClick(index) }
+                                    onClick={ () => handleMarkerClick(conflictEvent, index) }
                                 />
                             </Marker>
                         ))}
                     </svg>
                 </ZoomableGroup>
-            </ComposableMap>
+            </ComposableMap>)
+            }
             {countryContent && (<ReactTooltip id="countryTooltip">
                 { countryContent }
             </ReactTooltip>)}
-            {conflictContent && (<ReactTooltip id="protestTooltip" delayHide={200} className="protestTooltip" effect='solid'>
+            {conflictContent && (
+                <ReactTooltip id="protestTooltip" delayHide={200} className="protestTooltip" effect='solid'>
                 { conflictContent }
             </ReactTooltip>)}
         </Fragment>

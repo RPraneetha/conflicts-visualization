@@ -10,10 +10,10 @@ import {transform} from "topojson-client";
 const countryCount = require("../../data/countryCount-2016-test.json");
 const conflictData = require("../../data/locations-2016-test.json").locations;
 
-// const indiaMap = "https://raw.githubusercontent.com/deldersveld/topojson/master/countries/india/india-states.json";
-const indiaMap = require("../../data/india-states");
-const stateMap = require("../../data/india-districts");
-    // "https://raw.githubusercontent.com/deldersveld/topojson/master/countries/india/india-districts.json";
+const indiaMap = "https://raw.githubusercontent.com/deldersveld/topojson/master/countries/india/india-states.json";
+// const indiaMap = require("../../data/india-states");
+const stateMap = "https://raw.githubusercontent.com/deldersveld/topojson/master/countries/india/india-districts.json";
+    // require("../../data/india-districts");
     // "https://raw.githubusercontent.com/zcreativelabs/react-simple-maps/master/topojson-maps/world-110m.json";
 
 const titleCase = string => {
